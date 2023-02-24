@@ -3,7 +3,7 @@
 # @File : sk_random_forest_regressor.py
 import random
 from sklearn.ensemble import RandomForestRegressor
-
+from sklearn.metrics import accuracy_score
 # 历史点数
 # history = [[3, 1, 1], [6, 5, 2], [4, 4, 4], [6, 3, 1], [6, 2, 1], [5, 3, 2], [5, 4, 3], [6, 4, 3], [6, 4, 2], [5, 3, 2],
 #            [5, 4, 1], [5, 3, 1], [3, 2, 1], [6, 5, 4], [4, 4, 2], [6, 5, 4], [3, 3, 1], [5, 2, 1], [6, 6, 3], [6, 4, 3],
@@ -17,8 +17,9 @@ history = [[5, 5, 1], [6, 5, 4], [5, 5, 5], [4, 4, 1], [5, 4, 3], [6, 4, 2], [6,
            [6, 3, 3], [6, 1, 1], [3, 2, 1], [6, 5, 4], [6, 4, 1], [5, 5, 4], [5, 2, 2], [5, 3, 2], [6, 4, 3], [6, 5, 3],
            [6, 6, 5], [4, 4, 2], [6, 4, 2], [5, 4, 3], [6, 4, 1], [6, 5, 3], [5, 2, 1], [6, 5, 3], [5, 5, 2], [6, 5, 1],
            [6, 3, 1], [6, 5, 4], [6, 1, 1], [3, 1, 1], [4, 3, 1], [3, 2, 1], [3, 2, 1], [4, 3, 2], [6, 6, 4], [4, 1, 1],
-           [4, 3, 3], [3, 3, 3], [6, 4, 2], [6, 4, 2], [6, 2, 1], [6, 2, 1], [4, 4, 3], [6, 6, 3],
+           [4, 3, 3], [3, 3, 3], [6, 4, 2], [6, 4, 2], [6, 2, 1], [6, 2, 1], [4, 4, 3], [6, 6, 3]
            ]
+
 # 特征工程：将历史点数转换为特征
 X = []
 y = []
@@ -27,10 +28,11 @@ for i in range(len(history) - 1):
     y.append(history[i + 1])
 
 # 训练随机森林模型
-model = RandomForestRegressor(n_estimators=2000, random_state=46)
+model = RandomForestRegressor(n_estimators=1000, random_state=sum(random.choice(history)))
 model.fit(X, y)
 
 # 预测下一次点数
 last_roll = history[-1]
 predicted_roll = model.predict([last_roll])
 print("下一次掷3个骰子的点数预测为：", [int(x) for x in predicted_roll[0]])
+print("total：", sum([int(x) for x in predicted_roll[0]]))
