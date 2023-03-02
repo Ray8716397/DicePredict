@@ -20,15 +20,14 @@ def predict_roll(history, num_trials=1000):
     return predicted_roll
 
 
-for xx in range(4):
-    print("---------------------------------------------------------------------------------------------------")
+def predict_proc(pidx, lock):
     random.seed(random.seed(random.randint(1, 100)))
     data = [18, 7, 9, 17, 16, 13, 11, 9, 9, 12, 11, 4, 14, 8, 8, 8, 9, 10, 10, 18, 6, 10, 14, 12, 7, 15, 13, 11, 12, 4,
             7,
             14, 14, 13, 11, 15, 11, 8, 11, 11, 11, 12, 15, 6, 16, 8, 11, 10, 12, 13, 13, 11, 12, 10, 11, 9, 8, 11, 12,
             15,
             12, 12, 11, 8, 15, 13, 13, 16, 9, 8, 9, 8, 12, 5, 11, 8, 9, 12, 8, 12, 9, 5, 13, 10, 8, 12, 12, 8, 14, 9, 9,
-            5, 16, 12, 5, 7, 9, 11, 11, 10, 13, 16, 4, 7, 9]
+            5, 16, 12, 5, 7, 9, 11, 11, 10, 13, 16, 4, 7]
     length = 35
     data = data[len(data) - length:]
     seed = 1
@@ -56,6 +55,20 @@ for xx in range(4):
             seed += 1
             count_poch += 1
 
-    print(predict_roll([x for x in data]))
+    lock.acquire()
+    print(f"---------------------------------------------------------------------------------------------------")
+    print(f"proc{pidx} res: \033[1;31m {predict_roll([x for x in data])} \033[0m")
     print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in data]) / len(data)}")
     print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in data]) / len(data)}")
+    lock.release()
+
+
+with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
+    manager = multiprocessing.Manager()
+    plock = manager.Lock()
+    for xx in range(4):
+        proc_pool.apply_async(predict_proc, (xx, plock))
+
+    else:
+        proc_pool.close()
+        proc_pool.join()
