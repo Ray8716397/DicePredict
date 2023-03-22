@@ -5,7 +5,7 @@ import os
 
 history = [15, 11, 10, 13, 10, 12, 8, 9, 13, 8, 8, 13, 12, 9, 9, 11, 8, 3, 17, 11, 13, 11, 12, 11, 17, 7, 16, 10, 16,
            14, 10, 13, 9, 8, 12, 10, 4, 8, 11, 10, 7, 14, 8, 12, 11, 8, 13, 13, 9]
-new_data = [12, 6, 9, 13, 12,]
+new_data = [12, 6, 9, 13, 12, 7]
 data = history + new_data
 
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     predict_odd = next_odd if database['odd_acc_his'][-1] else (not next_odd)
     predict_small = next_small if database['small_acc_his'][-1] else (not next_small)
 
-    print(f"predict_odd:{predict_odd} \npredict_small:{predict_small}")
+    print(f"predict_odd:\033[1;31m {'ODD' if predict_odd else 'EVEN'} \033[0m\npredict_small:\033[1;31m {'SMALL' if predict_small else 'BIG'}\033[0m")
     database['real_odd_prev'].append(next_odd)
     database['real_small_prev'].append(next_small)
     database['p_odd_prev'].append(predict_odd)
