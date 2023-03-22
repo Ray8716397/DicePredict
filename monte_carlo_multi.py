@@ -1,14 +1,15 @@
 import random
 import multiprocessing
+import pickle
+import os
 
-history = [12, 15, 16, 15, 3, 12, 16, 9, 7, 8, 12, 15, 14, 13, 16, 12, 17, 6, 10, 10, 8, 13, 9, 13, 16, 9, 10, 10, 11,
-           12, 5, 10, 11, 9, 12, 11, 11, 6, 11, 12, 11, 15, 11, 13, 13, 11, 10, 8, 10, 9, 7, 9, 10, 11, 9, 7, 6, 13, 10,
-           9, 10, 13, 8, 11, 9, 12, 6, 7, 10, 4, 12, 10, 15, 11, 12, 8, 11, 9, 12, 16, 13, 11, 8]
+history = [15, 11, 10, 13, 10, 12, 8, 9, 13, 8, 8, 13, 12, 9, 9, 11, 8, 3, 17, 11, 13, 11, 12, 11, 17, 7, 16, 10, 16,
+           14, 10, 13, 9, 8, 12, 10, 4, 8, 11, 10, 7, 14, 8, 12, 11]
+data = history + []
 
-data = history + [6, 9, 18, 9, 14, 12, 13, 13, 7, 14, 8, 13, 4]
 
-odd_history = [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, ]
-small_history = [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
+# odd_history += [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, ]
+# small_history += [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
 
 
 def roll_dice():
@@ -30,21 +31,21 @@ def predict_roll(history, num_trials=1000):
     return predicted_roll
 
 
-def predict_proc(pidx):
+def predict_proc(pidx, history_data):
     random.seed(random.seed(random.randint(1, 100)))
-    length = len(data)
+    length = len(history_data)
     seed = 1
     max_epoch = 10
     count_poch = 0
     while count_poch < max_epoch:
         count_odd = 0
         count_small = 0
-        for i, d in enumerate(data[:-1]):
-            res = predict_roll([x for x in data[:i + 1]])
+        for i, d in enumerate(history_data[:-1]):
+            res = predict_roll([x for x in history_data[:i + 1]])
             r_odd = res % 2 == 1
             r_small = res < 11
-            t_odd = data[i + 1] % 2 == 1
-            t_small = data[i + 1] < 11
+            t_odd = history_data[i + 1] % 2 == 1
+            t_small = history_data[i + 1] < 11
             if r_odd == t_odd:
                 count_odd += 1
             if r_small == t_small:
@@ -59,18 +60,18 @@ def predict_proc(pidx):
             count_poch += 1
 
     # print(f"---------------------------------------------------------------------------------------------------")
-    res = predict_roll([x for x in data])
+    res = predict_roll([x for x in history_data])
     # print(f"proc{pidx} res: \033[1;31m {res} \033[0m")
-    # print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in data]) / len(data)}")
-    # print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in data]) / len(data)}")
+    # print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in history_data]) / len(history_data)}")
+    # print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in history_data]) / len(history_data)}")
     return [res, odd_acc, small_acc]
 
 
-if __name__ == "__main__":
+def predict_multi_proc(history_data):
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
         manager = multiprocessing.Manager()
         plock = manager.Lock()
-        results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(4)]
+        results = [proc_pool.apply_async(predict_proc, (x, data)) for x in range(4)]
 
         max_odd = 0.0
         max_small = 0.0
@@ -87,12 +88,41 @@ if __name__ == "__main__":
         else:
             max_odd_r = results[max_oi].get()
             max_small_r = results[max_si].get()
-            print(f"!!!!!!!!!!!max odd!!!!!!!!!!!!!!!!!!!!!!")
-            print(max_odd_r)
 
-            print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
-            print(max_small_r)
+            return max_odd_r[0] % 2 == 1, max_small_r[0] < 11
 
-            print(f"!!!!!!!!!!!acc %!!!!!!!!!!!!!!!!!!!!!!")
-            print(f"true odd% {odd_history.count(1) / len(odd_history)}")
-            print(f"true small%{small_history.count(1) / len(small_history)}")
+
+if __name__ == "__main__":
+
+    # print(f"!!!!!!!!!!!max odd!!!!!!!!!!!!!!!!!!!!!!")
+    # print(max_odd_r)
+    #
+    # print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
+    # print(max_small_r)
+
+    # print(f"!!!!!!!!!!!predict!!!!!!!!!!!!!!!!!!!!!")
+    # print(f"true odd% {odd_history.count(1) / len(odd_history)}")
+    # print(f"true small%{small_history.count(1) / len(small_history)}")
+    next_odd, next_small = predict_multi_proc(data)
+    if not os.path.exists('db'):
+        is_odd, is_small = predict_multi_proc(data[:-1])
+        database = {"his": [data[-2]], 'odd_acc_his': [is_odd == (data[-1] % 2 == 1)],
+                    'small_acc_his': [is_small == (data[-1] < 11)]}
+        with open("db", 'wb') as f:
+            pickle.dump(database, f)
+
+    else:
+        database = pickle.load(open('db', 'rb'))
+
+    print(f"!!!!!!!!!!!last:{data[-1]} predict start!!!!!!!!!!!!!!!!!!!!!")
+    predict_odd = next_odd if database['odd_acc_his'][-1] else (not next_odd)
+    predict_small = next_small if database['small_acc_his'][-1] else (not next_small)
+
+    print(f"predict_odd:{predict_odd} \npredict_small:{predict_small}")
+    database['odd_acc_his'].append(predict_odd)
+    database['small_acc_his'].append(predict_small)
+    database['his'].append(data[-1])
+
+    with open("db", 'wb') as f:
+        pickle.dump(database, f)
+    print(database)
