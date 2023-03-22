@@ -5,8 +5,7 @@ import os
 
 history = [15, 11, 10, 13, 10, 12, 8, 9, 13, 8, 8, 13, 12, 9, 9, 11, 8, 3, 17, 11, 13, 11, 12, 11, 17, 7, 16, 10, 16,
            14, 10, 13, 9, 8, 12, 10, 4, 8, 11, 10, 7, 14, 8, 12, 11, 8, 13, 13, 9]
-new_data = [12, 6, 9, 13, 12, 17, 14,  14, 11, 13,
-           11, 7]
+new_data = [12, 6, 9, 13, 12,]
 data = history + new_data
 
 
@@ -125,11 +124,11 @@ if __name__ == "__main__":
 
     else:
         database = pickle.load(open('db', 'rb'))
-        database['odd_acc_his'].append(database['real_odd_prev'] == (data[-1] % 2 == 1))
-        database['small_acc_his'].append(database['real_small_prev'] == (data[-1] < 11))
+        database['odd_acc_his'].append(database['real_odd_prev'][-1] == (data[-1] % 2 == 1))
+        database['small_acc_his'].append(database['real_small_prev'][-1] == (data[-1] < 11))
 
-        database['p_odd_acc_his'].append(database['p_odd_prev'] == (data[-1] % 2 == 1))
-        database['p_small_acc_his'].append(database['p_small_prev'] == (data[-1] < 11))
+        database['p_odd_acc_his'].append(database['p_odd_prev'][-1] == (data[-1] % 2 == 1))
+        database['p_small_acc_his'].append(database['p_small_prev'][-1] == (data[-1] < 11))
         database['his'].append(data[-1])
         print("----------------------------------------------------------")
         print(f"read odd acc: {database['odd_acc_his'].count(True) / len(database['odd_acc_his'])}")
