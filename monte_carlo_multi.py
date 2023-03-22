@@ -21,13 +21,11 @@ def predict_roll(history, num_trials=1000):
     return predicted_roll
 
 
-def predict_proc(pidx, lock):
+def predict_proc(pidx):
     random.seed(random.seed(random.randint(1, 100)))
-    data = [9, 12, 16, 10, 13, 12, 8, 12, 8, 11, 15, 15, 10, 9, 8, 11, 16, 12, 13, 11, 6, 13, 9, 11, 10, 9, 8, 12, 17,
-            16, 11, 10, 6, 6, 10, 10]
-    length = 35
-    if len(data) > length:
-        data = data[len(data) - length:]
+    data = [13, 11, 12, 8, 8, 9, 11, 8, 13, 7, 15, 6, 12, 10, 11, 12, 7, 8, 12, 16, 11, 12, 9, 16, 15, 13, 9, 16, 14,
+            13, 7, 10, 8, 11, 5, 11, 10, 9, 11, 12, 11, 13, 9, 18, 6, 14, 10, 5, 9, 9, 13, 15, 12, 5, 6, 5, 9, 8, 8, 7, 11, 13, 12, 15, 5, 14, 11, 5, 10, 13, 11, 13]
+    length = len(data)
     seed = 1
     max_epoch = 10
     count_poch = 0
@@ -53,20 +51,34 @@ def predict_proc(pidx, lock):
             seed += 1
             count_poch += 1
 
-    lock.acquire()
     print(f"---------------------------------------------------------------------------------------------------")
-    print(f"proc{pidx} res: \033[1;31m {predict_roll([x for x in data])} \033[0m")
+    res = predict_roll([x for x in data])
+    print(f"proc{pidx} res: \033[1;31m {res} \033[0m")
     print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in data]) / len(data)}")
     print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in data]) / len(data)}")
-    lock.release()
+    return [res, odd_acc, small_acc]
 
 
 with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
     manager = multiprocessing.Manager()
     plock = manager.Lock()
-    for xx in range(4):
-        proc_pool.apply_async(predict_proc, (xx, plock))
+    results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(4)]
 
+    max_odd = 0.0
+    max_small = 0.0
+    max_oi = 0
+    max_si = 0
+    for idx, r in enumerate(results):
+        s, oacc, sacc = r.get()
+        if max_odd <= oacc:
+            max_odd = oacc
+            max_oi = idx
+        if max_small <= sacc:
+            max_small = sacc
+            max_si = idx
     else:
-        proc_pool.close()
-        proc_pool.join()
+        print(f"!!!!!!!!!!!max odd!!!!!!!!!!!!!!!!!!!!!!")
+        print(results[max_oi].get())
+
+        print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
+        print(results[max_si].get())
