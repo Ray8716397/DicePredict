@@ -1,6 +1,15 @@
 import random
 import multiprocessing
 
+history = [12, 15, 16, 15, 3, 12, 16, 9, 7, 8, 12, 15, 14, 13, 16, 12, 17, 6, 10, 10, 8, 13, 9, 13, 16, 9, 10, 10, 11,
+           12, 5, 10, 11, 9, 12, 11, 11, 6, 11, 12, 11, 15, 11, 13, 13, 11, 10, 8, 10, 9, 7, 9, 10, 11, 9, 7, 6, 13, 10,
+           9, 10, 13, 8, 11, 9, 12, 6, 7, 10, 4, 12, 10, 15, 11, 12, 8, 11, 9, 12, 16, 13, 11, 8]
+
+data = history + [6, 9, 18, 9, 14, 12, 13, 13, 7, 14, 8, 13, 4]
+
+odd_history = [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, ]
+small_history = [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
+
 
 def roll_dice():
     return random.randint(1, 6)
@@ -23,8 +32,6 @@ def predict_roll(history, num_trials=1000):
 
 def predict_proc(pidx):
     random.seed(random.seed(random.randint(1, 100)))
-    data = [13, 11, 12, 8, 8, 9, 11, 8, 13, 7, 15, 6, 12, 10, 11, 12, 7, 8, 12, 16, 11, 12, 9, 16, 15, 13, 9, 16, 14,
-            13, 7, 10, 8, 11, 5, 11, 10, 9, 11, 12, 11, 13, 9, 18, 6, 14, 10, 5, 9, 9, 13, 15, 12, 5, 6, 5, 9, 8, 8, 7, 11, 13, 12, 15, 5, 14, 11, 5, 10, 13, 11, 13]
     length = len(data)
     seed = 1
     max_epoch = 10
@@ -51,34 +58,41 @@ def predict_proc(pidx):
             seed += 1
             count_poch += 1
 
-    print(f"---------------------------------------------------------------------------------------------------")
+    # print(f"---------------------------------------------------------------------------------------------------")
     res = predict_roll([x for x in data])
-    print(f"proc{pidx} res: \033[1;31m {res} \033[0m")
-    print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in data]) / len(data)}")
-    print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in data]) / len(data)}")
+    # print(f"proc{pidx} res: \033[1;31m {res} \033[0m")
+    # print(f"odd_acc: {odd_acc}, odd%: {sum([1 if i % 2 == 1 else 0 for i in data]) / len(data)}")
+    # print(f"small_acc: {small_acc}, small%: {sum([1 if i < 11 else 0 for i in data]) / len(data)}")
     return [res, odd_acc, small_acc]
 
 
-with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
-    manager = multiprocessing.Manager()
-    plock = manager.Lock()
-    results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(4)]
+if __name__ == "__main__":
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
+        manager = multiprocessing.Manager()
+        plock = manager.Lock()
+        results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(4)]
 
-    max_odd = 0.0
-    max_small = 0.0
-    max_oi = 0
-    max_si = 0
-    for idx, r in enumerate(results):
-        s, oacc, sacc = r.get()
-        if max_odd <= oacc:
-            max_odd = oacc
-            max_oi = idx
-        if max_small <= sacc:
-            max_small = sacc
-            max_si = idx
-    else:
-        print(f"!!!!!!!!!!!max odd!!!!!!!!!!!!!!!!!!!!!!")
-        print(results[max_oi].get())
+        max_odd = 0.0
+        max_small = 0.0
+        max_oi = 0
+        max_si = 0
+        for idx, r in enumerate(results):
+            s, oacc, sacc = r.get()
+            if max_odd <= oacc:
+                max_odd = oacc
+                max_oi = idx
+            if max_small <= sacc:
+                max_small = sacc
+                max_si = idx
+        else:
+            max_odd_r = results[max_oi].get()
+            max_small_r = results[max_si].get()
+            print(f"!!!!!!!!!!!max odd!!!!!!!!!!!!!!!!!!!!!!")
+            print(max_odd_r)
 
-        print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
-        print(results[max_si].get())
+            print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
+            print(max_small_r)
+
+            print(f"!!!!!!!!!!!acc %!!!!!!!!!!!!!!!!!!!!!!")
+            print(f"true odd% {odd_history.count(1) / len(odd_history)}")
+            print(f"true small%{small_history.count(1) / len(small_history)}")
