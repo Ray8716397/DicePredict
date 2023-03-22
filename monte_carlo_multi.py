@@ -4,8 +4,10 @@ import pickle
 import os
 
 history = [15, 11, 10, 13, 10, 12, 8, 9, 13, 8, 8, 13, 12, 9, 9, 11, 8, 3, 17, 11, 13, 11, 12, 11, 17, 7, 16, 10, 16,
-           14, 10, 13, 9, 8, 12, 10, 4, 8, 11, 10, 7, 14, 8, 12, 11]
-data = history + []
+           14, 10, 13, 9, 8, 12, 10, 4, 8, 11, 10, 7, 14, 8, 12, 11, 8, 13, 13, 9]
+new_data = [12, 6, 9, 13, 12, 17, 14,  14, 11, 13,
+           11, 7]
+data = history + new_data
 
 
 # odd_history += [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, ]
@@ -103,25 +105,48 @@ if __name__ == "__main__":
     # print(f"!!!!!!!!!!!predict!!!!!!!!!!!!!!!!!!!!!")
     # print(f"true odd% {odd_history.count(1) / len(odd_history)}")
     # print(f"true small%{small_history.count(1) / len(small_history)}")
-    next_odd, next_small = predict_multi_proc(data)
+
+    # 判断有没数据库，没有的话根据最后一个生成
     if not os.path.exists('db'):
-        is_odd, is_small = predict_multi_proc(data[:-1])
-        database = {"his": [data[-2]], 'odd_acc_his': [is_odd == (data[-1] % 2 == 1)],
-                    'small_acc_his': [is_small == (data[-1] < 11)]}
+        is_odd, is_small = predict_multi_proc(data[:-2])
+        # 是否预测正确数据库
+        database = {"his": [data[-2]],
+                    'odd_acc_his': [is_odd == (data[-1] % 2 == 1)],
+                    'small_acc_his': [is_small == (data[-1] < 11)],
+                    'real_odd_prev': [],
+                    'real_small_prev': [],
+                    'p_odd_prev': [],
+                    'p_small_prev': [],
+                    'p_odd_acc_his': [],
+                    'p_small_acc_his': [],
+                    }
         with open("db", 'wb') as f:
             pickle.dump(database, f)
 
     else:
         database = pickle.load(open('db', 'rb'))
+        database['odd_acc_his'].append(database['real_odd_prev'] == (data[-1] % 2 == 1))
+        database['small_acc_his'].append(database['real_small_prev'] == (data[-1] < 11))
 
-    print(f"!!!!!!!!!!!last:{data[-1]} predict start!!!!!!!!!!!!!!!!!!!!!")
+        database['p_odd_acc_his'].append(database['p_odd_prev'] == (data[-1] % 2 == 1))
+        database['p_small_acc_his'].append(database['p_small_prev'] == (data[-1] < 11))
+        database['his'].append(data[-1])
+        print("----------------------------------------------------------")
+        print(f"read odd acc: {database['odd_acc_his'].count(True) / len(database['odd_acc_his'])}")
+        print(f"read small acc: {database['small_acc_his'].count(True) / len(database['small_acc_his'])}")
+        print(f"predict odd acc: {database['p_odd_acc_his'].count(True) / len(database['p_odd_acc_his'])}")
+        print(f"predict small acc: {database['p_small_acc_his'].count(True) / len(database['p_small_acc_his'])}")
+
+    next_odd, next_small = predict_multi_proc(data)
+    print(f"!!!!!!!!!!!last:{new_data} predict start!!!!!!!!!!!!!!!!!!!!!")
     predict_odd = next_odd if database['odd_acc_his'][-1] else (not next_odd)
     predict_small = next_small if database['small_acc_his'][-1] else (not next_small)
 
     print(f"predict_odd:{predict_odd} \npredict_small:{predict_small}")
-    database['odd_acc_his'].append(predict_odd)
-    database['small_acc_his'].append(predict_small)
-    database['his'].append(data[-1])
+    database['real_odd_prev'].append(next_odd)
+    database['real_small_prev'].append(next_small)
+    database['p_odd_prev'].append(predict_odd)
+    database['p_small_prev'].append(predict_small)
 
     with open("db", 'wb') as f:
         pickle.dump(database, f)
