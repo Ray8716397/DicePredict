@@ -17,7 +17,7 @@ def roll_dice():
     return random.randint(1, 6)
 
 
-def predict_roll(history, num_trials=1000):
+def predict_roll(history, num_trials=2000):
     counts = [0] * 16
     for i in range(num_trials):
         roll1 = roll_dice()
@@ -54,7 +54,7 @@ def predict_proc(pidx, history_data):
         odd_acc = count_odd / length
         small_acc = count_small / length
 
-        if small_acc > 0.55 and odd_acc > 0.55:
+        if small_acc > 0.7 and odd_acc > 0.7:
             break
         else:
             seed += 1
