@@ -1,21 +1,19 @@
 import random
 import multiprocessing
 
-history = [12, 15, 16, 15, 3, 12, 16, 9, 7, 8, 12, 15, 14, 13, 16, 12, 17, 6, 10, 10, 8, 13, 9, 13, 16, 9, 10, 10, 11,
-           12, 5, 10, 11, 9, 12, 11, 11, 6, 11, 12, 11, 15, 11, 13, 13, 11, 10, 8, 10, 9, 7, 9, 10, 11, 9, 7, 6, 13, 10,
-           9, 10, 13, 8, 11, 9, 12, 6, 7, 10, 4, 12, 10, 15, 11, 12, 8, 11, 9, 12, 16, 13, 11, 8]
+history = [12,14,7,10,8,7,12,6,12,10,17,7,11,9,6,12,10,1,12,9,13,11,7,6,6,9,15,12,16,9,15,10,9,6,8,6,8,13,12]
 
-data = history + [6, 9, 18, 9, 14, 12, 13, 13, 7, 14, 8, 13, 4]
+data = history + []
 
-odd_history = [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, ]
-small_history = [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
+odd_history   = [1,0,0,0,1,1]
+small_history = [0,0,0,1,0,1]
 
 
 def roll_dice():
     return random.randint(1, 6)
 
 
-def predict_roll(history, num_trials=1000):
+def predict_roll(history, num_trials=500):
     counts = [0] * 16
     for i in range(num_trials):
         roll1 = roll_dice()
@@ -70,7 +68,7 @@ if __name__ == "__main__":
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as proc_pool:
         manager = multiprocessing.Manager()
         plock = manager.Lock()
-        results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(4)]
+        results = [proc_pool.apply_async(predict_proc, (x,)) for x in range(8)]
 
         max_odd = 0.0
         max_small = 0.0
@@ -93,6 +91,12 @@ if __name__ == "__main__":
             print(f"!!!!!!!!!!!max small!!!!!!!!!!!!!!!!!!!!!!")
             print(max_small_r)
 
-            print(f"!!!!!!!!!!!acc %!!!!!!!!!!!!!!!!!!!!!!")
+            print(f"!!!!!!!!!!!res!!!!!!!!!!!!!!!!!!!!!!")
+            if (max_small_r[1] + max_small_r[2]) / 2 > (max_odd_r[1] + max_odd_r[2]) / 2:
+                print(max_small_r)
+            else:
+                print(max_odd_r)
+
+            print(f"!!!!!!!!!!!{data[-1]}acc %!!!!!!!!!!!!!!!!!!!!!!")
             print(f"true odd% {odd_history.count(1) / len(odd_history)}")
             print(f"true small%{small_history.count(1) / len(small_history)}")
